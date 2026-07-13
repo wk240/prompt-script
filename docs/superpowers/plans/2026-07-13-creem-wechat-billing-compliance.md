@@ -190,7 +190,7 @@ export function resolveCreemPlan(productId: string): { plan: PaidPlan; interval:
 }
 ```
 
-Replace Stripe variables in `.env.example` with `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_TEST_MODE`, four `CREEM_*_PRODUCT_ID` values, `CRON_SECRET`, `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION`.
+Replace Stripe variables in `.env.example` with `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_TEST_MODE`, `CREEM_CHECKOUT_ENABLED`, four `CREEM_*_PRODUCT_ID` values, `CRON_SECRET`, `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION`.
 
 - [ ] **Step 4: Run the focused tests**
 
@@ -581,15 +581,19 @@ import 'server-only'
 import { Creem } from 'creem'
 
 export function createCreemClient() {
+  const testMode = process.env.CREEM_TEST_MODE
+  if (testMode !== 'true' && testMode !== 'false') throw new Error('CREEM_MODE_NOT_CONFIGURED')
   const apiKey = process.env.CREEM_API_KEY
   if (!apiKey) throw new Error('CREEM_API_KEY_MISSING')
-  return new Creem({ apiKey, server: process.env.CREEM_TEST_MODE === 'true' ? 'test' : 'prod' })
+  return new Creem({ apiKey, server: testMode === 'true' ? 'test' : 'prod' })
 }
 ```
 
+`CREEM_TEST_MODE` must be exactly `true` or `false`. Missing or invalid values throw `CREEM_MODE_NOT_CONFIGURED`; the client must never default to production.
+
 `createCreemCheckout` accepts only `{ plan, interval, locale, userId, email }`. Build the success URL from `NEXT_PUBLIC_WEB_APP_URL` and the validated locale, obtain the product ID from `getCreemProductId`, and call `creem.checkouts.create` with exactly the fields asserted in Step 1.
 
-In `app/api/billing/subscribe/route.ts`, parse only `plan`, `interval`, and `locale`; reject extra fields with `INVALID_CHECKOUT_FIELDS`, call `getPurchaseEligibility`, return `ACTIVE_SUBSCRIPTION_EXISTS` with HTTP 409 when blocked, and return `{ success: true, data: { url } }`.
+In `app/api/billing/subscribe/route.ts`, parse only `plan`, `interval`, and `locale`; reject extra fields with `INVALID_CHECKOUT_FIELDS`; then require `CREEM_CHECKOUT_ENABLED === 'true'`. Unset, `false`, or any other value must return HTTP 503 with `CREEM_CHECKOUT_DISABLED` before eligibility or provider calls. When enabled, call `getPurchaseEligibility`, return `ACTIVE_SUBSCRIPTION_EXISTS` with HTTP 409 when blocked, and return `{ success: true, data: { url } }`.
 
 - [ ] **Step 4: Run checkout tests**
 
