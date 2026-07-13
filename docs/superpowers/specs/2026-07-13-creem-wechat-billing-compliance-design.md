@@ -1,7 +1,7 @@
 # Creem + WeChat Pay Billing and Compliance Design
 
 **Date:** 2026-07-13
-**Status:** Approved design, pending implementation plan
+**Status:** Implemented, pending live payment approval and verified production legal identity
 
 ## 1. Objective
 
