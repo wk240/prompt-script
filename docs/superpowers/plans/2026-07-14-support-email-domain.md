@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace every current `support@ohmyprompt.com` reference with `support@oh-my-prompt.com`.
+**Goal:** Replace the legacy undashed support domain with `support@oh-my-prompt.com` everywhere.
 
 **Architecture:** Keep the support address as the existing server-owned constant in `lib/legal/identity.ts` and make all bilingual legal copy, tests, and current billing documentation agree with it. This is a literal identity update with no new configuration or abstraction.
 
@@ -20,7 +20,7 @@
 - Modify: `docs/superpowers/specs/2026-07-13-creem-wechat-billing-compliance-design.md`
 - Modify: `docs/superpowers/plans/2026-07-13-creem-wechat-billing-compliance.md`
 
-- [ ] **Step 1: Update test expectations first**
+- [x] **Step 1: Update test expectations first**
 
 Replace the expected address in `packages/web-app/lib/legal/content.test.ts` and `packages/web-app/tests/landing.spec.ts`:
 
@@ -28,7 +28,7 @@ Replace the expected address in `packages/web-app/lib/legal/content.test.ts` and
 'support@oh-my-prompt.com'
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run:
 
@@ -37,11 +37,11 @@ cd packages/web-app
 npx vitest run lib/legal/content.test.ts
 ```
 
-Expected: FAIL because runtime legal content still contains `support@ohmyprompt.com`.
+Expected: FAIL because runtime legal content still contains the legacy undashed address.
 
-- [ ] **Step 3: Update runtime and documentation references**
+- [x] **Step 3: Update runtime and documentation references**
 
-Replace every exact `support@ohmyprompt.com` occurrence in the scoped runtime and current documentation files with:
+Replace every exact legacy support-address occurrence in the scoped runtime and current documentation files with:
 
 ```text
 support@oh-my-prompt.com
@@ -49,7 +49,7 @@ support@oh-my-prompt.com
 
 Do not change `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, or `LEGAL_JURISDICTION`.
 
-- [ ] **Step 4: Run focused and complete verification**
+- [x] **Step 4: Run focused and complete verification**
 
 Run:
 

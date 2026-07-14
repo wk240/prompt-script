@@ -18,7 +18,7 @@
 - Modify: `docs/superpowers/specs/2026-07-13-creem-wechat-billing-compliance-design.md`
 - Modify: `docs/superpowers/plans/2026-07-13-creem-wechat-billing-compliance.md`
 
-- [ ] **Step 1: Write failing Terms assertions**
+- [x] **Step 1: Write failing Terms assertions**
 
 Remove `plans-prices` from the expected Terms section IDs and remove the `getPlanPrice` import and loop that require prices inside all legal content. Add:
 
@@ -37,7 +37,7 @@ it('uses the subscription page as the only current price source', () => {
 })
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run:
 
@@ -48,7 +48,7 @@ npx vitest run lib/legal/content.test.ts
 
 Expected: FAIL because both Terms documents still contain `plans-prices` and exact prices.
 
-- [ ] **Step 3: Update bilingual Terms content**
+- [x] **Step 3: Update bilingual Terms content**
 
 In `lib/legal/content.ts`:
 
@@ -58,11 +58,11 @@ In `lib/legal/content.ts`:
 - renumber the remaining headings from Creem renewal through Support from 2 through 11;
 - leave renewal, tax, invoice, delivery, refund, and support disclosures unchanged.
 
-- [ ] **Step 4: Align current billing documentation**
+- [x] **Step 4: Align current billing documentation**
 
 Update the current billing design and implementation plan so Terms is described as linking plan details and prices to the subscription page rather than duplicating exact prices. Keep canonical-price and subscription-page verification requirements unchanged.
 
-- [ ] **Step 5: Run focused and complete verification**
+- [x] **Step 5: Run focused and complete verification**
 
 Run:
 
@@ -83,6 +83,6 @@ git diff --check
 
 Expected: focused tests pass, all registered unit tests pass, production build passes, and diff check succeeds.
 
-- [ ] **Step 6: Preserve unrelated worktree changes**
+- [x] **Step 6: Preserve unrelated worktree changes**
 
 Do not stage or modify the pre-existing team deletion page/test work. Commit only files whose complete diff belongs to this change; otherwise leave the verified changes unstaged and report that constraint.

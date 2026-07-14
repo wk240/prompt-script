@@ -5,7 +5,7 @@
 
 ## Objective
 
-Replace every current support-email reference from `support@ohmyprompt.com` to `support@oh-my-prompt.com`.
+Replace the legacy undashed support domain with `support@oh-my-prompt.com` everywhere.
 
 ## Scope
 

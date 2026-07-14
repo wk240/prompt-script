@@ -16,7 +16,7 @@
 - Modify: `packages/web-app/lib/legal/content.test.ts`
 - Modify: `packages/web-app/lib/legal/content.ts`
 
-- [ ] **Step 1: Write failing content tests**
+- [x] **Step 1: Write failing content tests**
 
 Remove the `getLegalIdentity` test block and update `expectedIds` to exclude identity-dependent sections:
 
@@ -41,7 +41,7 @@ it('does not publish operator identity fields', () => {
 })
 ```
 
-- [ ] **Step 2: Run the content test and verify RED**
+- [x] **Step 2: Run the content test and verify RED**
 
 Run:
 
@@ -52,7 +52,7 @@ npx vitest run lib/legal/content.test.ts
 
 Expected: FAIL because the content still includes `controller`, `operator`, `governing-law`, and public identity labels.
 
-- [ ] **Step 3: Remove identity-dependent content**
+- [x] **Step 3: Remove identity-dependent content**
 
 In both locales of `lib/legal/content.ts`:
 
@@ -62,7 +62,7 @@ In both locales of `lib/legal/content.ts`:
 - renumber every remaining visible section heading sequentially from 1;
 - retain `support@oh-my-prompt.com` and all payment, refund, privacy, acceptable-use, and support disclosures.
 
-- [ ] **Step 4: Run the content test and verify GREEN**
+- [x] **Step 4: Run the content test and verify GREEN**
 
 Run:
 
@@ -70,7 +70,7 @@ Run:
 npx vitest run lib/legal/content.test.ts
 ```
 
-Expected: 10 tests pass after the two identity-loader tests are removed.
+Expected: 11 tests pass after the two identity-loader tests are removed and the operator-field regression test is added.
 
 ### Task 2: Remove Runtime Identity Loading And Rendering
 
@@ -89,7 +89,7 @@ Expected: 10 tests pass after the two identity-loader tests are removed.
 - Modify: `packages/web-app/app/en/contact/page.tsx`
 - Modify: `packages/web-app/tests/billing.spec.ts`
 
-- [ ] **Step 1: Add a browser regression assertion**
+- [x] **Step 1: Add a browser regression assertion**
 
 Extend the existing public legal-route test in `tests/billing.spec.ts` to assert Contact renders the support email and no operator labels:
 
@@ -101,7 +101,7 @@ await expect(page.getByText('地址', { exact: true })).toHaveCount(0)
 await expect(page.getByText('司法管辖区', { exact: true })).toHaveCount(0)
 ```
 
-- [ ] **Step 2: Simplify `PolicyPage`**
+- [x] **Step 2: Simplify `PolicyPage`**
 
 Change the props and function signature to:
 
@@ -116,7 +116,7 @@ export function PolicyPage({ locale, page }: PolicyPageProps) {
 
 Remove the `LegalIdentity` import, identity labels, `showsIdentity`, `showsJurisdiction`, `<address>` block, and jurisdiction paragraph. Keep ordinary paragraph and list rendering unchanged.
 
-- [ ] **Step 3: Simplify all ten route components**
+- [x] **Step 3: Simplify all ten route components**
 
 For each Chinese and English legal route, remove the identity import and render only:
 
@@ -126,7 +126,7 @@ return <PolicyPage locale="zh" page="privacy" />
 
 Use the route's existing locale and page values. Delete `lib/legal/identity.ts` after no imports remain.
 
-- [ ] **Step 4: Verify routes and type contracts**
+- [x] **Step 4: Verify routes and type contracts**
 
 Run:
 
@@ -147,15 +147,15 @@ Expected: both commands pass without any `LEGAL_*` values.
 - Modify: `docs/superpowers/plans/2026-07-13-creem-wechat-billing-compliance.md`
 - Modify: `packages/web-app/docs/billing-operations.md`
 
-- [ ] **Step 1: Remove obsolete configuration**
+- [x] **Step 1: Remove obsolete configuration**
 
 Delete `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION` from `.env.example`, README setup instructions, and Playwright web-server environment configuration.
 
-- [ ] **Step 2: Update current billing documentation**
+- [x] **Step 2: Update current billing documentation**
 
 Remove instructions that require configuring or publishing the three deleted variables. State instead that public operator identity is intentionally not supplied and live payment readiness remains pending until the owner obtains qualified legal guidance and satisfies provider disclosure requirements. Do not mark live readiness complete or enable checkout.
 
-- [ ] **Step 3: Verify obsolete contracts are gone**
+- [x] **Step 3: Verify obsolete contracts are gone**
 
 Run:
 
@@ -170,7 +170,7 @@ Expected: no matches.
 **Files:**
 - Modify: `docs/superpowers/plans/2026-07-14-remove-operator-identity.md`
 
-- [ ] **Step 1: Run the full unit suite**
+- [x] **Step 1: Run the full unit suite**
 
 Run:
 
@@ -181,7 +181,7 @@ npm run test:unit
 
 Expected: all registered unit tests pass.
 
-- [ ] **Step 2: Run lint**
+- [x] **Step 2: Run lint**
 
 Run:
 
@@ -191,7 +191,7 @@ npm run lint
 
 Expected: exit 0 with no new errors.
 
-- [ ] **Step 3: Build without legal identity environment variables**
+- [x] **Step 3: Build without legal identity environment variables**
 
 Run with synthetic Supabase and non-live billing values only:
 
@@ -207,7 +207,7 @@ env -u LEGAL_OPERATOR_NAME -u LEGAL_OPERATOR_ADDRESS -u LEGAL_JURISDICTION \
 
 Expected: production build passes and generates all scoped legal routes.
 
-- [ ] **Step 4: Run final searches and diff checks**
+- [x] **Step 4: Run final searches and diff checks**
 
 Run:
 
