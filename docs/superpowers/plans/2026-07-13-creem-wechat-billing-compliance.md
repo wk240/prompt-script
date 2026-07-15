@@ -14,7 +14,7 @@
 
 - Run implementation inside `packages/web-app`, which is a git submodule with its own repository. Use `superpowers:using-git-worktrees` before execution if the existing dirty worktree cannot be preserved cleanly.
 - Do not overwrite the existing unrelated edits in `packages/web-app/app/team/[teamId]/page.tsx` and `packages/web-app/tests/team.spec.ts`.
-- Before Task 12, the owner must supply the verified public legal operator name, address, and jurisdiction. Store them as `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION`; do not publish sample identity values.
+- Public operator name, address, and jurisdiction fields are intentionally omitted. Live readiness remains pending until qualified legal guidance confirms that all required disclosures are satisfied.
 - Test and live Creem product IDs must be created before live checkout verification. Unit tests use fixed fake IDs and never call Creem.
 - Apply the database migration in a local Supabase instance before running route tests that call the billing RPC.
 - Install Docker and the Supabase CLI before Task 2; `npx supabase db reset` and `npx supabase test db` require the local Supabase stack.
@@ -190,7 +190,7 @@ export function resolveCreemPlan(productId: string): { plan: PaidPlan; interval:
 }
 ```
 
-Replace Stripe variables in `.env.example` with `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_TEST_MODE`, `CREEM_CHECKOUT_ENABLED`, four `CREEM_*_PRODUCT_ID` values, `CRON_SECRET`, `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION`.
+Replace Stripe variables in `.env.example` with `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_TEST_MODE`, four `CREEM_*_PRODUCT_ID` values, and `CRON_SECRET`.
 
 - [ ] **Step 4: Run the focused tests**
 
@@ -581,19 +581,15 @@ import 'server-only'
 import { Creem } from 'creem'
 
 export function createCreemClient() {
-  const testMode = process.env.CREEM_TEST_MODE
-  if (testMode !== 'true' && testMode !== 'false') throw new Error('CREEM_MODE_NOT_CONFIGURED')
   const apiKey = process.env.CREEM_API_KEY
   if (!apiKey) throw new Error('CREEM_API_KEY_MISSING')
-  return new Creem({ apiKey, server: testMode === 'true' ? 'test' : 'prod' })
+  return new Creem({ apiKey, server: process.env.CREEM_TEST_MODE === 'true' ? 'test' : 'prod' })
 }
 ```
 
-`CREEM_TEST_MODE` must be exactly `true` or `false`. Missing or invalid values throw `CREEM_MODE_NOT_CONFIGURED`; the client must never default to production.
-
 `createCreemCheckout` accepts only `{ plan, interval, locale, userId, email }`. Build the success URL from `NEXT_PUBLIC_WEB_APP_URL` and the validated locale, obtain the product ID from `getCreemProductId`, and call `creem.checkouts.create` with exactly the fields asserted in Step 1.
 
-In `app/api/billing/subscribe/route.ts`, parse only `plan`, `interval`, and `locale`; reject extra fields with `INVALID_CHECKOUT_FIELDS`; then require `CREEM_CHECKOUT_ENABLED === 'true'`. Unset, `false`, or any other value must return HTTP 503 with `CREEM_CHECKOUT_DISABLED` before eligibility or provider calls. When enabled, call `getPurchaseEligibility`, return `ACTIVE_SUBSCRIPTION_EXISTS` with HTTP 409 when blocked, and return `{ success: true, data: { url } }`.
+In `app/api/billing/subscribe/route.ts`, parse only `plan`, `interval`, and `locale`; reject extra fields with `INVALID_CHECKOUT_FIELDS`, call `getPurchaseEligibility`, return `ACTIVE_SUBSCRIPTION_EXISTS` with HTTP 409 when blocked, and return `{ success: true, data: { url } }`.
 
 - [ ] **Step 4: Run checkout tests**
 
@@ -1039,115 +1035,16 @@ git commit -m "feat(billing): expose provider-neutral billing status"
 
 ### Task 12: Build Shared Bilingual Legal Content
 
-**Files:**
-- Create: `packages/web-app/lib/billing/locale.ts`
-- Create: `packages/web-app/lib/billing/locale.test.ts`
-- Create: `packages/web-app/lib/legal/identity.ts`
-- Create: `packages/web-app/lib/legal/content.ts`
-- Create: `packages/web-app/lib/legal/content.test.ts`
-- Create: `packages/web-app/components/legal/PolicyPage.tsx`
-- Create: `packages/web-app/components/legal/LanguageMenu.tsx`
-- Modify: `packages/web-app/app/privacy/page.tsx`
-- Modify: `packages/web-app/app/terms/page.tsx`
-- Modify: `packages/web-app/app/refund/page.tsx`
-- Modify: `packages/web-app/app/contact/page.tsx`
-- Create: `packages/web-app/app/acceptable-use/page.tsx`
-- Create: `packages/web-app/app/en/privacy/page.tsx`
-- Create: `packages/web-app/app/en/terms/page.tsx`
-- Create: `packages/web-app/app/en/refund/page.tsx`
-- Create: `packages/web-app/app/en/contact/page.tsx`
-- Create: `packages/web-app/app/en/acceptable-use/page.tsx`
-- Modify: `packages/web-app/components/layout/Header.tsx`
-- Modify: `packages/web-app/components/layout/Footer.tsx`
+**Revised by:** `docs/superpowers/plans/2026-07-14-remove-operator-identity.md`
 
-- [ ] **Step 1: Write failing locale and content parity tests**
+- [x] **Step 1: Define typed bilingual policy content**
+- [x] **Step 2: Render the shared Chinese and English legal routes**
+- [x] **Step 3: Remove public operator name, address, and jurisdiction fields**
+- [x] **Step 4: Keep the support email and payment disclosures public**
+- [x] **Step 5: Verify all legal routes build without legal identity environment variables**
 
-```ts
-import { describe, expect, it } from 'vitest'
-import { legalContent } from './content'
-
-describe('legal content parity', () => {
-  it.each(['privacy', 'terms', 'refund', 'acceptableUse', 'contact'] as const)('%s has matching section IDs', page => {
-    expect(legalContent.zh[page].sections.map(section => section.id))
-      .toEqual(legalContent.en[page].sections.map(section => section.id))
-  })
-
-  it('contains both payment channels and the support address', () => {
-    const serialized = JSON.stringify(legalContent)
-    expect(serialized).toContain('support@ohmyprompt.com')
-    expect(serialized).toContain('Creem')
-    expect(serialized).toContain('微信支付')
-    expect(serialized).toContain('WeChat Pay')
-  })
-})
-```
-
-Also test `switchLocalePath('/refund', 'en') === '/en/refund'` and `switchLocalePath('/en/terms', 'zh') === '/terms'`.
-
-- [ ] **Step 2: Run content tests and verify failure**
-
-Run: `cd packages/web-app && npx vitest run lib/billing/locale.test.ts lib/legal/content.test.ts`
-
-Expected: FAIL because shared resources do not exist.
-
-- [ ] **Step 3: Define identity validation and typed content**
-
-```ts
-export function getLegalIdentity() {
-  const identity = {
-    operatorName: process.env.LEGAL_OPERATOR_NAME?.trim(),
-    operatorAddress: process.env.LEGAL_OPERATOR_ADDRESS?.trim(),
-    jurisdiction: process.env.LEGAL_JURISDICTION?.trim(),
-    supportEmail: 'support@ohmyprompt.com',
-  }
-  if (!identity.operatorName || !identity.operatorAddress || !identity.jurisdiction) {
-    throw new Error('LEGAL_IDENTITY_NOT_CONFIGURED')
-  }
-  return identity as { operatorName: string; operatorAddress: string; jurisdiction: string; supportEmail: string }
-}
-```
-
-Define one typed resource whose Chinese and English pages have the same section IDs. Required IDs:
-
-- Privacy: `controller`, `data-collected`, `purposes-bases`, `processors`, `payments`, `international`, `retention`, `rights`, `security`, `minors`, `contact`.
-- Terms: `operator`, `service`, `plans-prices`, `creem-renewal`, `wechat-manual`, `delivery`, `content-rights`, `acceptable-use`, `third-parties`, `termination`, `liability`, `governing-law`, `updates`, `support`.
-- Refund: `window`, `excluded`, `calculation`, `annual-rule`, `example`, `request`, `channels`, `access`, `creem-discretion`, `mandatory-rights`.
-- Acceptable Use: `sexual-content`, `deepfakes`, `illegal-harm`, `malware`, `ip`, `regulated`, `platform-rules`, `abuse`.
-- Contact: `operator`, `support`, `response-time`, `billing-help`, `deletion`.
-
-The content must cover account, prompt, synchronization, team, image, configuration, usage, and billing data; purposes and legal bases; Supabase, object storage, configured AI providers, Creem, and WeChat Pay; international processing, retention, rights, security, and minors. It must also state the exact four CNY/USD prices, Creem tax/invoice and automatic-renewal terms, WeChat manual renewal, Creem Merchant of Record scope, no full card storage, first-purchase refund rule and exact 168-hour boundary, formula, yearly example, immediate access termination after an approved refund, mandatory-law exception, non-affiliation with supported platforms, and three-business-day response time.
-
-- [ ] **Step 4: Replace duplicated pages with shared rendering**
-
-`PolicyPage` receives `{ locale, page, identity }`, renders one locale, and passes locale explicitly to `Header`, `Footer`, and `LanguageMenu`. Each route is a small server component:
-
-```tsx
-export default function EnglishPrivacyPage() {
-  return <PolicyPage locale="en" page="privacy" identity={getLegalIdentity()} />
-}
-```
-
-Change `Header` and `Footer` to accept `locale: BillingLocale = 'zh'`. On English scoped routes, Header uses English labels and links Subscription to `/en/subscription`; Home and Docs still lead to the existing Chinese-only routes. Footer generates Contact, Privacy, Terms, Refund, and Acceptable Use links in the active locale. Existing non-scoped pages continue using the default Chinese locale.
-
-- [ ] **Step 5: Run content tests and build both locale trees**
-
-Run:
-
-```bash
-cd packages/web-app
-LEGAL_OPERATOR_NAME='Test Operator' LEGAL_OPERATOR_ADDRESS='Test Address' LEGAL_JURISDICTION='Test Jurisdiction' npx vitest run lib/billing/locale.test.ts lib/legal/content.test.ts
-LEGAL_OPERATOR_NAME='Test Operator' LEGAL_OPERATOR_ADDRESS='Test Address' LEGAL_JURISDICTION='Test Jurisdiction' npm run build
-```
-
-Expected: tests PASS and all ten legal routes appear in the Next.js build output.
-
-- [ ] **Step 6: Commit the legal-content slice**
-
-```bash
-cd packages/web-app
-git add lib/billing/locale.ts lib/billing/locale.test.ts lib/legal/identity.ts lib/legal/content.ts lib/legal/content.test.ts components/legal/PolicyPage.tsx components/legal/LanguageMenu.tsx app/privacy/page.tsx app/terms/page.tsx app/refund/page.tsx app/contact/page.tsx app/acceptable-use/page.tsx app/en/privacy/page.tsx app/en/terms/page.tsx app/en/refund/page.tsx app/en/contact/page.tsx app/en/acceptable-use/page.tsx components/layout/Header.tsx components/layout/Footer.tsx
-git commit -m "feat(compliance): add bilingual billing policies"
-```
+Public operator identity configuration and runtime validation were removed by owner decision. This does not establish live payment readiness; qualified legal and provider disclosure review remains pending.
+The Terms do not duplicate current prices; their Service section directs users to the subscription page as the source of current plan details and prices.
 
 ### Task 13: Update Subscription UI for Both Providers and Locales
 
@@ -1307,7 +1204,7 @@ Run:
 cd packages/web-app
 npm run test:unit
 npm run lint
-LEGAL_OPERATOR_NAME='Test Operator' LEGAL_OPERATOR_ADDRESS='Test Address' LEGAL_JURISDICTION='Test Jurisdiction' npm run build
+npm run build
 ```
 
 Expected: all unit tests PASS, lint exits 0, and production build exits 0.
@@ -1330,15 +1227,15 @@ git commit -m "chore(billing): remove Stripe integration"
 - Modify: `docs/superpowers/specs/2026-07-13-creem-wechat-billing-compliance-design.md`
 - Modify: `docs/superpowers/plans/2026-07-13-creem-wechat-billing-compliance.md`
 
-- [x] **Step 1: Add the final browser and route abuse cases**
+- [ ] **Step 1: Add the final browser and route abuse cases**
 
 Add tests for client-injected product/customer/reference/success URL fields, duplicate webhook delivery, out-of-order webhook delivery, refund display, expired active status, and public access to all 12 scoped routes. The abuse route tests must assert the server-selected identifiers were used and upstream details were not returned.
 
-- [x] **Step 2: Write the operations runbook**
+- [ ] **Step 2: Write the operations runbook**
 
 Document exact test/live environment variables, four product IDs, Creem webhook events, Creem webhook URL, WeChat payment and refund callback URLs, hourly cron, signature failure response, retry behavior, reconciliation observability, refund-case recording, and rollback procedure. The rollback procedure disables checkout first, leaves webhook/reconciliation enabled to converge existing records, and never restores Stripe.
 
-- [x] **Step 3: Run the complete verification matrix**
+- [ ] **Step 3: Run the complete verification matrix**
 
 ```bash
 cd packages/web-app
@@ -1346,7 +1243,7 @@ npx supabase db reset
 npx supabase test db
 npm run test:unit
 npm run lint
-LEGAL_OPERATOR_NAME='Test Operator' LEGAL_OPERATOR_ADDRESS='Test Address' LEGAL_JURISDICTION='Test Jurisdiction' npm run build
+npm run build
 npx playwright test tests/billing.spec.ts
 if rg -n -i 'stripe' app components lib types package.json .env.example README.md CLAUDE.md; then
   echo 'Active Stripe references found'
@@ -1369,11 +1266,9 @@ Expected:
 
 - [ ] **Step 4: Perform live-readiness checks without creating live charges**
 
-Verify that all production secrets and verified legal identity values exist in Vercel, webhook and refund callback URLs are reachable without authentication challenges, cron authentication works, support email receives a test message, policies are public, and the site displays the same four prices as the Creem dashboard. Do not enable live checkout until Creem account review and legal identity confirmation are complete.
+Verify that all production secrets exist in Vercel and qualified legal guidance confirms required public disclosures, webhook and refund callback URLs are reachable without authentication challenges, cron authentication works, support email receives a test message, policies are public, and the site displays the same four prices as the Creem dashboard. Do not enable live checkout until Creem account review and required disclosure review are complete.
 
-**Pending:** The operator intentionally left real legal identity values unfilled. Production secrets, provider dashboard values, callback reachability, cron execution, support mailbox delivery, verified public identity, and Creem approval were not verified. No live charge was created and checkout was not enabled.
-
-- [x] **Step 5: Mark plan/spec status and commit web-app documentation**
+- [ ] **Step 5: Mark plan/spec status and commit web-app documentation**
 
 Update the spec status to `Implemented, pending live payment approval` only after Step 3 passes. Mark all executed plan checkboxes. Then:
 
@@ -1383,7 +1278,7 @@ git add tests/billing.spec.ts docs/billing-operations.md README.md
 git commit -m "docs(billing): add operations and release checks"
 ```
 
-- [x] **Step 6: Update the parent repository submodule pointer and planning docs**
+- [ ] **Step 6: Update the parent repository submodule pointer and planning docs**
 
 ```bash
 cd ../..
@@ -1393,4 +1288,4 @@ git commit -m "feat: integrate Creem and compliant billing"
 
 ## Completion Gate
 
-Implementation is complete only when all Task 15 verification commands have fresh passing output, the active-source Stripe search is empty, the legal identity is verified and public, and live checkout remains disabled until Creem approves the account. Test fixtures may use synthetic legal values; production pages may not.
+Implementation is complete only when all Task 15 verification commands have fresh passing output, the active-source Stripe search is empty, required public disclosures are legally verified, and live checkout remains disabled until Creem approves the account. Public operator identity fields are intentionally omitted; live readiness remains pending.
