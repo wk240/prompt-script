@@ -8,7 +8,7 @@
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)]()
 [![Made for Prompt](https://img.shields.io/badge/Made%20for-Prompt-purple.svg)]()
 
-  🌐 [官方网站](https://oh-my-prompt.com/) | 📦 [下载安装](https://github.com/wk240/oh-my-prompt/releases) | 🇺🇸 [English](README_EN.md)
+  🌐 [官方网站](https://oh-my-prompt.com/) | 📦 [下载安装](https://github.com/wk240/oh-my-prompt/releases) | 🇺🇸 [English](README_EN.md) | 🚗 [车辆管理系统榜单](https://github.com/wk240/awesome-vehicle-management) | 🚙 [车辆管理系统](https://qiguanche.com)
 </div>
 
 ---
